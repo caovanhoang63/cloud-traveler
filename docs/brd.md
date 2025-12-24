@@ -12,7 +12,26 @@
 
 Cloud Traveler is a demonstration web application showcasing production-ready 3-tier architecture patterns. The application serves as a reference implementation for cloud-native development practices, featuring PostgreSQL database integration and AWS S3 storage capabilities.
 
-## 2. Business Objectives
+## 2. Target Market
+
+| Attribute | Value |
+|-----------|-------|
+| Region | Vietnam |
+| Expected Active Users | ~100 |
+| User Type | Developers, learners, small teams |
+| Language | English (UI) |
+
+### 2.1 User Profile
+- Vietnamese developers learning cloud architecture
+- Small development teams needing file upload reference
+- Students studying 3-tier application design
+
+### 2.2 Infrastructure Considerations
+- AWS Region: `ap-southeast-1` (Singapore) recommended for Vietnam users
+- Low-traffic design suitable for ~100 concurrent users
+- Single instance deployment sufficient
+
+## 3. Business Objectives
 
 | Objective | Description |
 |-----------|-------------|
@@ -79,7 +98,9 @@ Application must have automated build and push to container registry.
 | Docker image size | < 20MB |
 | Database health check | < 100ms response |
 | File upload | Stream directly to S3 |
-| Build pipeline | Auto-trigger on main branch |
+| Build pipeline | Auto-trigger on master branch |
+| Concurrent users | Support ~100 active users |
+| Availability | 99% uptime (single instance) |
 
 ## 7. Constraints
 
