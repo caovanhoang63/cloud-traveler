@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Traveler - 3-Tier Architecture Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a365d 0%, #2563eb 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        header { text-align: center; color: white; margin-bottom: 2rem; }
+        header h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+        header p { opacity: 0.9; font-size: 1.1rem; }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .card h2 {
+            color: #1a365d;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .card h2::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+            border-radius: 2px;
+        }
+        .tier-badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-left: auto;
+        }
+        .tier-data { background: #dbeafe; color: #1e40af; }
+        .tier-storage { background: #fef3c7; color: #b45309; }
+        .description { color: #666; margin-bottom: 1rem; font-size: 0.9rem; }
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #1a365d 0%, #2563eb 100%);
+            color: white;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-danger { background: #ef4444; color: white; padding: 0.3rem 0.6rem; font-size: 0.75rem; }
+        .btn-danger:hover { background: #dc2626; }
+        .status-box { margin-top: 1rem; padding: 0.75rem; border-radius: 8px; display: none; font-size: 0.9rem; }
+        .status-box.show { display: block; }
+        .status-success { background: #dcfce7; border-left: 4px solid #22c55e; color: #166534; }
+        .status-error { background: #fee2e2; border-left: 4px solid #ef4444; color: #b91c1c; }
+        .status-loading { background: #dbeafe; border-left: 4px solid #3b82f6; color: #1e40af; }
+        .upload-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.2s ease;
+            margin-bottom: 1rem;
+        }
+        .upload-zone:hover { border-color: #f59e0b; background: #fffbeb; }
+        .upload-zone.dragover { border-color: #f59e0b; background: #fef3c7; }
+        .upload-zone input[type="file"] { display: none; }
+        .upload-zone label { cursor: pointer; color: #666; }
+        .upload-zone label strong { color: #f59e0b; }
+        .file-info {
+            margin-top: 0.75rem;
+            padding: 0.5rem;
+            background: #f8fafc;
+            border-radius: 6px;
+            display: none;
+        }
+        .file-info.show { display: flex; align-items: center; justify-content: space-between; }
+        .arch-diagram { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-top: 1rem; }
+        .arch-tier { padding: 1rem; border-radius: 8px; text-align: center; }
+        .arch-tier h4 { margin-bottom: 0.3rem; font-size: 0.9rem; }
+        .arch-tier p { font-size: 0.75rem; opacity: 0.9; }
+        .tier-web { background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%); color: white; }
+        .tier-app { background: linear-gradient(135deg, #1a365d 0%, #2563eb 100%); color: white; }
+        .tier-data-bg { background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white; }
+        .tier-storage-bg { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; }
+        .files-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.85rem; }
+        .files-table th, .files-table td { padding: 0.6rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        .files-table th { background: #f8fafc; font-weight: 600; color: #475569; }
+        .files-table tr:hover { background: #f8fafc; }
+        .empty-state { text-align: center; padding: 2rem; color: #94a3b8; }
+        footer { text-align: center; color: rgba(255, 255, 255, 0.7); margin-top: 2rem; font-size: 0.85rem; }
+        @media (max-width: 768px) { .arch-diagram { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Cloud Traveler</h1>
+            <p>Production-Ready 3-Tier Architecture Demo</p>
+        </header>
+
+        <div class="card">
+            <h2>Architecture Overview</h2>
+            <div class="arch-diagram">
+                <div class="arch-tier tier-web"><h4>Web Tier</h4><p>HTML/CSS/JS</p></div>
+                <div class="arch-tier tier-app"><h4>App Tier</h4><p>Go + Gin</p></div>
+                <div class="arch-tier tier-data-bg"><h4>Data Tier</h4><p>PostgreSQL</p></div>
+                <div class="arch-tier tier-storage-bg"><h4>Storage</h4><p>AWS S3</p></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Database Health Check <span class="tier-badge tier-data">Data Tier</span></h2>
+            <p class="description">Test PostgreSQL connection by pinging the database.</p>
+            <button id="dbCheckBtn" class="btn btn-primary" onclick="checkDatabase()">Test Connection</button>
+            <div id="dbStatus" class="status-box"></div>
+        </div>
+
+        <div class="card">
+            <h2>File Upload <span class="tier-badge tier-storage">Storage Tier</span></h2>
+            <p class="description">Upload files to S3 and store metadata in PostgreSQL.</p>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div id="uploadZone" class="upload-zone">
+                    <input type="file" id="fileInput" name="file" accept="image/*">
+                    <label for="fileInput"><strong>Click to upload</strong> or drag and drop<br><small>Images only</small></label>
+                </div>
+                <div id="fileInfo" class="file-info">
+                    <span id="fileName"></span>
+                    <button type="button" class="btn btn-danger" onclick="clearFile()">Remove</button>
+                </div>
+                <button type="submit" id="uploadBtn" class="btn btn-primary" disabled>Upload to S3</button>
+            </form>
+            <div id="uploadStatus" class="status-box"></div>
+        </div>
+
+        <div class="card">
+            <h2>Uploaded Files <span class="tier-badge tier-data">Data Tier</span></h2>
+            <p class="description">Files stored in S3 with metadata in PostgreSQL.</p>
+            <button class="btn btn-primary" onclick="loadFiles()">Refresh List</button>
+            <div id="filesContainer">
+                <table class="files-table">
+                    <thead><tr><th>ID</th><th>Filename</th><th>Type</th><th>Size</th><th>Created</th><th>Actions</th></tr></thead>
+                    <tbody id="filesTableBody"><tr><td colspan="6" class="empty-state">Loading...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <footer><p>Built with Go, Gin, PostgreSQL, and AWS S3</p></footer>
+    </div>
+
+    <script>
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const uploadBtn = document.getElementById('uploadBtn');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => uploadZone.addEventListener(e, ev => { ev.preventDefault(); ev.stopPropagation(); }));
+        ['dragenter', 'dragover'].forEach(e => uploadZone.addEventListener(e, () => uploadZone.classList.add('dragover')));
+        ['dragleave', 'drop'].forEach(e => uploadZone.addEventListener(e, () => uploadZone.classList.remove('dragover')));
+
+        uploadZone.addEventListener('drop', e => {
+            if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; showFileInfo(e.dataTransfer.files[0]); }
+        });
+
+        fileInput.addEventListener('change', e => { if (e.target.files.length) showFileInfo(e.target.files[0]); });
+
+        function showFileInfo(file) {
+            fileName.textContent = `${file.name} (${formatBytes(file.size)})`;
+            fileInfo.classList.add('show');
+            uploadZone.style.display = 'none';
+            uploadBtn.disabled = false;
+        }
+
+        function clearFile() {
+            fileInput.value = '';
+            fileInfo.classList.remove('show');
+            uploadZone.style.display = 'block';
+            uploadBtn.disabled = true;
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        async function checkDatabase() {
+            const btn = document.getElementById('dbCheckBtn');
+            const status = document.getElementById('dbStatus');
+            btn.disabled = true;
+            showStatus(status, 'Connecting...', 'loading');
+            try {
+                const res = await fetch('/api/health/db');
+                const data = await res.json();
+                showStatus(status, data.message, data.status === 'success' ? 'success' : 'error');
+            } catch (e) { showStatus(status, 'Network error: ' + e.message, 'error'); }
+            finally { btn.disabled = false; }
+        }
+
+        document.getElementById('uploadForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const btn = document.getElementById('uploadBtn');
+            const status = document.getElementById('uploadStatus');
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            btn.disabled = true;
+            showStatus(status, 'Uploading...', 'loading');
+            try {
+                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showStatus(status, `Uploaded: ${data.data.filename} (S3 Key: ${data.data.s3_key})`, 'success');
+                    clearFile();
+                    loadFiles();
+                } else { showStatus(status, data.message, 'error'); }
+            } catch (e) { showStatus(status, 'Network error: ' + e.message, 'error'); }
+            finally { btn.disabled = false; }
+        });
+
+        async function loadFiles() {
+            const tbody = document.getElementById('filesTableBody');
+            try {
+                const res = await fetch('/api/files');
+                const data = await res.json();
+                if (data.status === 'success' && data.data.files && data.data.files.length > 0) {
+                    tbody.innerHTML = data.data.files.map(f => `
+                        <tr>
+                            <td>${f.id}</td>
+                            <td>${f.filename}</td>
+                            <td>${f.content_type || '-'}</td>
+                            <td>${formatBytes(f.size_bytes)}</td>
+                            <td>${new Date(f.created_at).toLocaleString()}</td>
+                            <td><button class="btn btn-danger" onclick="deleteFile(${f.id})">Delete</button></td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No files uploaded yet</td></tr>';
+                }
+            } catch (e) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Failed to load files</td></tr>'; }
+        }
+
+        async function deleteFile(id) {
+            if (!confirm('Delete this file record?')) return;
+            try {
+                const res = await fetch(`/api/files/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.status === 'success') loadFiles();
+                else alert(data.message);
+            } catch (e) { alert('Failed to delete: ' + e.message); }
+        }
+
+        function showStatus(el, msg, type) { el.textContent = msg; el.className = 'status-box show status-' + type; }
+
+        loadFiles();
+    </script>
+</body>
+</html>
