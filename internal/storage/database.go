@@ -3,6 +3,8 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+	"log"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -13,27 +15,35 @@ type DBConfig struct {
 	User     string
 	Password string
 	DBName   string
+	SSLMode  string
 }
 
-func NewPostgresDB(cfg DBConfig) (*sql.DB, error) {
+func NewPostgresDB(cfg DBConfig) *sql.DB {
 	dsn := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName,
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName, cfg.SSLMode,
 	)
 
-	db, err := sql.Open("postgres", dsn)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %w", err)
+	for {
+		db, err := sql.Open("postgres", dsn)
+		if err != nil {
+			log.Printf("Failed to open database: %v. Retrying in 5s...", err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		if err := db.Ping(); err != nil {
+			db.Close()
+			log.Printf("Failed to ping database: %v. Retrying in 5s...", err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		db.SetMaxOpenConns(25)
+		db.SetMaxIdleConns(5)
+		log.Println("Database connection established")
+		return db
 	}
-
-	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("failed to ping database: %w", err)
-	}
-
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(5)
-
-	return db, nil
 }
 
 func RunMigrations(db *sql.DB) error {

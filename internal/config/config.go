@@ -10,6 +10,7 @@ type Config struct {
 	DBUser       string
 	DBPassword   string
 	DBName       string
+	DBSSLMode    string
 	S3BucketName string
 	AWSRegion    string
 	ServerPort   string
@@ -22,6 +23,7 @@ func Load() *Config {
 		DBUser:       getEnv("DB_USER", "postgres"),
 		DBPassword:   getEnv("DB_PASSWORD", "postgres"),
 		DBName:       getEnv("DB_NAME", "cloud_traveler"),
+		DBSSLMode:    getEnv("DB_SSL_MODE", "disable"),
 		S3BucketName: getEnv("S3_BUCKET_NAME", ""),
 		AWSRegion:    getEnv("AWS_REGION", "us-east-1"),
 		ServerPort:   getEnv("SERVER_PORT", "8080"),

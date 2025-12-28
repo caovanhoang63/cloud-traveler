@@ -14,16 +14,14 @@ import (
 func main() {
 	cfg := config.Load()
 
-	db, err := storage.NewPostgresDB(storage.DBConfig{
+	db := storage.NewPostgresDB(storage.DBConfig{
 		Host:     cfg.DBHost,
 		Port:     cfg.DBPort,
 		User:     cfg.DBUser,
 		Password: cfg.DBPassword,
 		DBName:   cfg.DBName,
+		SSLMode:  cfg.DBSSLMode,
 	})
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
 	defer db.Close()
 
 	if err := storage.RunMigrations(db); err != nil {
